@@ -52,7 +52,7 @@ class VAE(keras.Model):
         x = layers.Conv2DTranspose(32, 3, activation="relu", strides=2, padding="same")(x)
         decoder_outputs = layers.Conv2DTranspose(1, 3, activation="sigmoid", padding="same")(x)
         self.decoder = keras.Model(latent_inputs, decoder_outputs, name="decoder")
-        self.decoder.summary()
+        # self.decoder.summary()
 
     def build_encoder(self):
         encoder_inputs = keras.Input(shape=(self.input_height, self.input_width, 1)) # 1 means to have it without color
@@ -64,7 +64,7 @@ class VAE(keras.Model):
         z_log_var = layers.Dense(self.latent_dim, name="z_log_var")(x)
         z = Sampling()([z_mean, z_log_var])
         self.encoder = keras.Model(encoder_inputs, [z_mean, z_log_var, z], name="encoder")
-        self.encoder.summary()
+        # self.encoder.summary()
     
     @property
     def metrics(self):

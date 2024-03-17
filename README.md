@@ -2,6 +2,21 @@
 Experiments in using ai agent world model development using energy based models. 
 Learning as I go but will add in some interesting findings here.
 
+## Background
+I am not a PHd or any student (dropped out of CS undergrad) but been doing software development since 2005, reading research papers and [did some early ML CV stuff](https://pitchbook.com/profiles/company/343232-83) 
+
+After listening to the use of EBMs with world base models from [this podcast](https://www.youtube.com/watch?v=5t1vTLU7s40) I have decided to try it.
+
+Mostly pulling from the [foundation paper](https://worldmodels.github.io/) I am switching out the MDN step and adding in a EBM.
+
+So would like
+
+```
+Environment -> ( VAE ) -> (EBM-LTSM) -> Action -> Environment
+```
+
+Lets see if a regular dude like me can pull it off.
+
 ## Setup
 More details coming soon but for now user requirements.txt
 
