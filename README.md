@@ -20,6 +20,8 @@ Lets see if a regular dude like me can pull it off.
 ## Setup
 More details coming soon but for now user requirements.txt
 
+Need to have tesseract-ocr
+
 ## Discussion
 Come chat with me and other developers exploring the AI agent space
 https://discord.gg/UWd6u5aR

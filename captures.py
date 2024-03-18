@@ -21,7 +21,7 @@ class Captures:
         self.frame = None
 
         self.table_schema = """
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE IF NOT EXISTS captures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             frame BLOB NOT NULL
         )
@@ -105,6 +105,27 @@ class Captures:
         except Exception as err:
             logger.error(f"get_all_pframes error\n{err}")
         
-        return db_pframes 
+        return db_pframes
+
+    def count_pframes(self) -> int:
+        """
+        Return amount of pframes in table captures
+        """ 
+        pfcount = 0
+
+        try:
+            self.sqlconn = sqlite3.connect("db/video_captures.sql")
+            cursor = self.sqlconn.cursor()
+
+            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+
+            resp = cursor.fetchall()
+            pfcount = resp[0]
+
+            self.sqlconn.close()
+        except Exception as err:
+            logger.error(f"count_pframes error\n{err}")
+        
+        return pfcount
 
 
