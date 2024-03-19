@@ -17,8 +17,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('video_capture')
 
 class VideoCapture:
-    def __init__(self, video_path: str=None):
+    def __init__(self, video_path: str=None, batch_size: int=0):
         self.video_path = video_path
+        self.batch_size = batch_size
         self.cap = None
         self.frame = None
         self.gray_frame = None
@@ -48,6 +49,9 @@ class VideoCapture:
             logger.info(f"Text from Frame: {frame_text}")
 
     def cap_frames(self):
+        """
+        Captures frames and text within the frame
+        """
         if self.video_path:
             self.cap = cv2.VideoCapture(self.video_path)
         else:
@@ -68,8 +72,6 @@ class VideoCapture:
                 if not ret:
                     logger.error("Cannot read video frame")
                     raise IOError
-                
-                
 
                 # convert frame to keras tensor grayscale
                 self.gray_frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
@@ -89,7 +91,7 @@ class VideoCapture:
                     logger.error(f"Insert of pframe failed\n{err}")
                     raise
 
-                self.extract_frame_text()
+                # self.extract_frame_text()
 
                 cv2.imshow("Cap Frame", self.frame)
 
@@ -102,5 +104,21 @@ class VideoCapture:
 
         self.cap.release()
         cv2.destroyAllWindows()
+    
+    def get_batches(self):
+        caps = Captures()
+        frames = caps.get_all_pframes()
+        num_frames = len(frames)
+        indices = np.arange(num_frames)
+        np.random.shuffle(indices)
+
+        for start_idx in range(0, num_frames, self.batch_size):
+            end_idx = min(start_idx + self.batch_size, num_frames)
+            batch_indices = indices[start_idx:end_idx]
+            batch_frames = [frames[i] for i in batch_indices]
+            yield np.array(batch_frames)
+
+
+    
             
 
