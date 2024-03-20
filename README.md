@@ -12,7 +12,11 @@ Mostly pulling from the [foundation paper](https://worldmodels.github.io/) I am 
 So would like
 
 ```
-Environment -> ( VAE ) -> (EBM-LTSM) -> Action -> Environment
+ # old model 
+ Environment -> ( VAE ) -> (EBM-LTSM) -> Action -> Environment
+
+ # current model 03202024
+ Environment -> AlexNet -> Energy via NCE loss -> ?
 ```
 
 Lets see if a regular dude like me can pull it off.
