@@ -2,6 +2,7 @@
 Captures database model
 """
 import sqlite3
+import datetime
 
 # class logging
 import logging
@@ -23,7 +24,8 @@ class Captures:
         self.table_schema = """
         CREATE TABLE IF NOT EXISTS captures (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            frame BLOB NOT NULL
+            frame BLOB NOT NULL,
+            text TEXT
         )
         """
         
@@ -40,7 +42,9 @@ class Captures:
         If doesn't exist, create it
         """
         try:
-            self.sqlconn = sqlite3.connect("db/video_captures.sql")
+            dbn_dt = datetime.datetime.now().strftime("%m%d%Y")
+            db_name = f"vc_{dbn_dt}.sql"
+            self.sqlconn = sqlite3.connect(f"db/{db_name}")
             cursor = self.sqlconn.cursor()
 
             # Check if table exists
@@ -58,18 +62,23 @@ class Captures:
             logger.error(f"check_tables error\n{err}")
             raise
 
-    def insert_pframe_tensor(self, pframe_tensor: bytes) -> bool:
+    def insert_pframe_tensor(self, pframe_tensor: bytes, frame_text: str=None) -> bool:
         """
-        Inserts a pickled frame tensor into the database
+        Inserts a pickled frame tensor into the database with the text from the frame
 
         Args:
             bytes pframe_tensor: pickled frame from capture
+            str pframe_text: text associated with pickled frame
         """
         try:
             self.sqlconn = sqlite3.connect("db/video_captures.sql")
             cursor = self.sqlconn.cursor()
 
-            cursor.execute(f"INSERT INTO {self.table_name} (frame) VALUES (?)", (pframe_tensor,))
+            if not frame_text:
+                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?)", (pframe_tensor,""))
+            else:
+                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?)", (pframe_tensor,frame_text))
+
             self.sqlconn.commit()
 
             logger.info(f"Inserted pickled frame (len {len(pframe_tensor)}) into '{self.table_name}'")
