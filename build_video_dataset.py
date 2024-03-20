@@ -1,14 +1,20 @@
 import cv2
 import srt
 import argparse
-import numpy as np
-import pickle
 import sys
 from captures import Captures
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('build_video_dataset')
+
+def update_progress(frame_count: int, total_frames: int):
+    # Calculate the progress percentage
+    progress = (frame_count / total_frames) * 100
+    
+    # Update the progress bar in the terminal
+    sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames}] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}]")
+    sys.stdout.flush()
 
 def main(video_path: str, srt_path: str):
     # Open the video file
@@ -32,6 +38,8 @@ def main(video_path: str, srt_path: str):
     # Iterate through the video frames
     while cap.isOpened():
         ret, frame = cap.read()
+        frame_count += 1
+        update_progress(frame_count, total_frames)
         if not ret:
             break
         
@@ -44,39 +52,36 @@ def main(video_path: str, srt_path: str):
                 # Get the subtitle
                 subtitle = subtitles[subtitle_index]
 
-                # convert frame to keras tensor grayscale
-                gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                # Convert to NumPy array
-                gray_frame = np.asarray(gray_frame)
-                # Expand dimension for channel (Keras expects grayscale as single-channel)
-                gray_frame = np.expand_dims(gray_frame, axis=-1)
-                # Convert to float32 (common data type for Keras tensors)
-                gray_frame = gray_frame.astype('float32')
+                # make this optional
+                # alexnet doesnt use grayscale
+                # # convert frame to keras tensor grayscale
+                # gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # # Convert to NumPy array
+                # gray_frame = np.asarray(gray_frame)
+                # # Expand dimension for channel (Keras expects grayscale as single-channel)
+                # gray_frame = np.expand_dims(gray_frame, axis=-1)
+                # # Convert to float32 (common data type for Keras tensors)
+                # gray_frame = gray_frame.astype('float32')
 
                 # save frame in DB
                 try:
-                    # pickle encode
-                    pframe = pickle.dumps(gray_frame)
-                    db_captures.insert_pframe_tensor(pframe, subtitle.content)
+                    db_captures.insert_pframe_tensor(frame, subtitle.content)
                     cap_frame_count += 1
                 except Exception as err:
                     logger.error(f"Insert of pframe failed\n{err}")
                     raise
 
                 ret, frame = cap.read()
+                frame_count += 1
+                update_progress(frame_count, total_frames)
                 if not ret:
                     break
             
             subtitle_index += 1
         
-        frame_count += 1
-
-        # Calculate the progress percentage
-        progress = (frame_count / total_frames) * 100
         
-        # Update the progress bar in the terminal
-        sys.stdout.write(f"\rProgress: [{int(progress)}%] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}]")
-        sys.stdout.flush()
+
+        
 
 
     # Release the video capture
@@ -92,21 +97,20 @@ if __name__ == "__main__":
     
     arg_parser.add_argument(
         "--video", 
-        type=str, 
-        nargs=1, 
+        type=str,
         help="path to video to capture"
     )
 
     arg_parser.add_argument(
         "--srt", 
         type=str, 
-        nargs=1, 
         help="path to .srt file for video"
     )
     
     args = arg_parser.parse_args()
 
     if args.video and args.srt:
+        print(f"loading video {args.video}")
         main(args.video, args.srt)
     else:
         print("Please specify both the video path and the srt path")

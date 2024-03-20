@@ -3,11 +3,14 @@ Captures database model
 """
 import sqlite3
 import datetime
+import io
+import numpy as np
 
 # class logging
 import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('models_captures')
+
 
 class Captures:
     """
@@ -16,10 +19,17 @@ class Captures:
     Will be expanded for other types of captures than just video
     Will be moved off of sqlite
     """
-    def __init__(self):
+    def __init__(self, db_path: str=None):
         self.table_name = "captures"
         self.sqlconn = None
         self.frame = None
+
+        if db_path:
+            self.db_path = db_path
+        else:
+            dbn_dt = datetime.datetime.now().strftime("%m%d%Y")
+            db_name = f"vc_{dbn_dt}.sql"
+            self.db_path = f"db/{db_name}"
 
         self.table_schema = """
         CREATE TABLE IF NOT EXISTS captures (
@@ -42,9 +52,7 @@ class Captures:
         If doesn't exist, create it
         """
         try:
-            dbn_dt = datetime.datetime.now().strftime("%m%d%Y")
-            db_name = f"vc_{dbn_dt}.sql"
-            self.sqlconn = sqlite3.connect(f"db/{db_name}")
+            self.sqlconn = sqlite3.connect(f"{self.db_path}")
             cursor = self.sqlconn.cursor()
 
             # Check if table exists
@@ -71,17 +79,20 @@ class Captures:
             str pframe_text: text associated with pickled frame
         """
         try:
-            self.sqlconn = sqlite3.connect("db/video_captures.sql")
+            self.sqlconn = sqlite3.connect(self.db_path)
             cursor = self.sqlconn.cursor()
 
+            # convert pframe_tensor
+            pt_binary = self.adapt_array(pframe_tensor)
+
             if not frame_text:
-                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?)", (pframe_tensor,""))
+                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?, ?)", (pt_binary,""))
             else:
-                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?)", (pframe_tensor,frame_text))
+                cursor.execute(f"INSERT INTO {self.table_name} (frame, text) VALUES (?, ?)", (pt_binary,frame_text))
 
             self.sqlconn.commit()
 
-            logger.info(f"Inserted pickled frame (len {len(pframe_tensor)}) into '{self.table_name}'")
+            # logger.info(f"Inserted pickled frame (len {len(pframe_tensor)}) into '{self.table_name}'")
 
             self.sqlconn.close()
 
@@ -101,7 +112,7 @@ class Captures:
 
         db_pframes = []
         try:
-            self.sqlconn = sqlite3.connect("db/video_captures.sql")
+            self.sqlconn = sqlite3.connect(self.db_path)
             cursor = self.sqlconn.cursor()
 
             if limit > 0:
@@ -123,7 +134,7 @@ class Captures:
         pfcount = 0
 
         try:
-            self.sqlconn = sqlite3.connect("db/video_captures.sql")
+            self.sqlconn = sqlite3.connect(self.db_path)
             cursor = self.sqlconn.cursor()
 
             cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
@@ -136,5 +147,27 @@ class Captures:
             logger.error(f"count_pframes error\n{err}")
         
         return pfcount
+    
+    def adapt_array(self, arr):
+        """
+        convert arr to binary
+        http://stackoverflow.com/a/31312102/190597 (SoulNibbler)
+        https://stackoverflow.com/questions/18621513/python-insert-numpy-array-into-sqlite3-database
+        """
+        
+        out = io.BytesIO()
+        np.save(out, arr)
+        out.seek(0)
+        return sqlite3.Binary(out.read())
+
+    def convert_array(self, text):
+        """
+        convert binary text to arr
+        """
+        out = io.BytesIO(text)
+        out.seek(0)
+        out = io.BytesIO(out.read())
+        return np.load(out)
+
 
 
