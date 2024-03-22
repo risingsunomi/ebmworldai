@@ -13,7 +13,7 @@ def update_progress(frame_count: int, total_frames: int):
     progress = (frame_count / total_frames) * 100
     
     # Update the progress bar in the terminal
-    sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames}] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}]")
+    sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames}] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))} frames]")
     sys.stdout.flush()
 
 def save_frame_to_db(db_captures, frame, subtitle):
@@ -23,13 +23,16 @@ def save_frame_to_db(db_captures, frame, subtitle):
         logger.error(f"Insert of pframe failed\n{err}")
         raise
 
-def main(video_path: str, srt_path: str):
+def main(video_path: str, srt_path: str=None):
     # Open the video file
     cap = cv2.VideoCapture(video_path)
 
     # Open the SRT file
-    with open(srt_path, 'r') as f:
-        subtitles = list(srt.parse(f.read()))
+    if srt_path:
+        with open(srt_path, 'r') as f:
+            subtitles = list(srt.parse(f.read()))
+    else:
+        subtitles = None
 
     # Get the total number of frames in the video
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -40,7 +43,9 @@ def main(video_path: str, srt_path: str):
     # Initialize variables for progress tracking
     frame_count = 0
     cap_frame_count = 0
-    subtitle_index = 0
+
+    if subtitles:
+        subtitle_index = 0
 
     # Iterate through the video frames
     while cap.isOpened():
@@ -48,17 +53,17 @@ def main(video_path: str, srt_path: str):
         frame_count += 1
         update_progress(frame_count, total_frames)
         if not ret:
-            logger.error("no ret")
             break
 
         current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0  # Convert to seconds
         subtitle = ""
 
-        # Check if the current frame is within the subtitle timestamps
-        if subtitle_index < len(subtitles) and current_time >= subtitles[subtitle_index].start.total_seconds():
-            subtitle = subtitles[subtitle_index].content
-            if current_time >= subtitles[subtitle_index].end.total_seconds():
-                subtitle_index += 1
+        if subtitles:
+            # Check if the current frame is within the subtitle timestamps
+            if subtitle_index < len(subtitles) and current_time >= subtitles[subtitle_index].start.total_seconds():
+                subtitle = subtitles[subtitle_index].content
+                if current_time >= subtitles[subtitle_index].end.total_seconds():
+                    subtitle_index += 1
 
         save_frame_to_db(
             db_captures,
@@ -93,8 +98,8 @@ if __name__ == "__main__":
     
     args = arg_parser.parse_args()
 
-    if args.video and args.srt:
+    if args.video:
         print(f"loading video {args.video}")
         main(args.video, args.srt)
     else:
-        print("Please specify both the video path and the srt path")
+        print("Please specify the video path")
