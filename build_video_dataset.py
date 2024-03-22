@@ -73,8 +73,11 @@ def main(video_path: str, srt_path: str=None):
 
         cap_frame_count += 1
 
+        cv2.imshow("Captured Frame", frame)
+
     # Release the video capture
     cap.release()
+    cv2.destroyAllWindows()
 
     print(f"Frame capturing complete. Captured {cap_frame_count} frames with text")
 

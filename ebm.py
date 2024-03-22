@@ -39,15 +39,15 @@ class EBM(nn.Module):
         Noise Contrastive Estimation (NCE) loss function.
         To be used with AlexNet features
         """
-        print(f"\nfeatures.shape: {features.shape}")
+        # print(f"\nfeatures.shape: {features.shape}")
         logp_x = self.forward(features).squeeze().unsqueeze(0).unsqueeze(1)    # logp(x)
-        print(f"logp_x.shape: {logp_x.shape}")
+        # print(f"logp_x.shape: {logp_x.shape}")
         logq_x = noise.log_prob(features).unsqueeze(1)  # logq(x)
-        print(f"logq_x.shape: {logq_x.shape}")
+        # print(f"logq_x.shape: {logq_x.shape}")
         logp_gen = self.forward(gen_noise).squeeze().unsqueeze(0).unsqueeze(1)  # logp(x̃)
-        print(f"logp_gen.shape: {logp_gen.shape}")
+        # print(f"logp_gen.shape: {logp_gen.shape}")
         logq_gen = noise.log_prob(gen_noise).unsqueeze(1)  # logq(x̃)
-        print(f"logq_gen.shape: {logq_gen.shape}")
+        # print(f"logq_gen.shape: {logq_gen.shape}")
 
         value_data = logp_x - torch.logsumexp(
             torch.cat(

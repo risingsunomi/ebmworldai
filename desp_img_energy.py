@@ -237,8 +237,6 @@ def main():
     # load alexnet only features
     anf = AlexNetFeatures()
 
-    
-
     # Load frames
     caps = Captures()
     cap_frames = caps.get_all_pframes(limit=0)
@@ -246,36 +244,37 @@ def main():
         # convert blob to image array
         cap_txt = cap_frame[1]
         cap_array = caps.convert_array(cap_txt)
+        cv2.imshow("Original Frame", cap_array)
 
         print(f"cap_array: {cap_array.shape}")
 
-        # Preprocess the image
-        preprocessed_image = preprocess_image(cap_array)
-        preprocessed_image = preprocessed_image.unsqueeze(0)  # Add batch dimension
+        # # Preprocess the image
+        # preprocessed_image = preprocess_image(cap_array)
+        # preprocessed_image = preprocessed_image.unsqueeze(0)  # Add batch dimension
 
-        # get alexnet features from image
-        an_features = anf(preprocessed_image)
+        # # get alexnet features from image
+        # an_features = anf(preprocessed_image)
 
-        print(f"\nan_features.shape: {an_features.shape}")
+        # print(f"\nan_features.shape: {an_features.shape}")
         
-        # load gaussian distribution
-        zeros_tensor = torch.zeros((an_features.shape))
-        eye_tensor = torch.eye(an_features.shape[-1])
+        # # load gaussian distribution
+        # zeros_tensor = torch.zeros((an_features.shape))
+        # eye_tensor = torch.eye(an_features.shape[-1])
 
-        print(f"zeros_tensor.shape {zeros_tensor.shape}")
-        print(f"eye_tensor.shape {eye_tensor.shape}")
+        # print(f"zeros_tensor.shape {zeros_tensor.shape}")
+        # print(f"eye_tensor.shape {eye_tensor.shape}")
 
-        noise = D.MultivariateNormal(zeros_tensor, eye_tensor)
+        # noise = D.MultivariateNormal(zeros_tensor, eye_tensor)
 
-        # generate noise from image for energy calc
-        gen_noise = noise.sample()
+        # # generate noise from image for energy calc
+        # gen_noise = noise.sample()
 
-        print(f"gen_noise.shape {gen_noise.shape}")
+        # print(f"gen_noise.shape {gen_noise.shape}")
 
-        # get energy
-        feature_energy, _ = ebm.nce_loss(noise, an_features, gen_noise)
+        # # get energy
+        # feature_energy, _ = ebm.nce_loss(noise, an_features, gen_noise)
 
-        print(f"features_energy: {feature_energy}\n")
+        # print(f"features_energy: {feature_energy}\n")
 
         # alex_contours = anf(preprocessed_image)
         #     print(f"alex_contours: {alex_contours.shape}")
@@ -325,14 +324,14 @@ def main():
         # if cap_frame[2] != "":
         #     print(f"\ncaption: {cap_frame[2]}\n")
         
-        cv2.imshow("Original Frame", cap_array)
+        
         # # cv2.imshow("3D Energy Map of Frame", ftd_img)
         # cv2.imshow("Frame Energy Map", frame_overlaid_image)
         # # cv2.imshow("Contours AlexNet", contour_highlight)
         # # cv2.imshow("Contours Energy Image", contour_overlaid_image)
         # cv2.imshow("3D Energy Map of Contours", td_img)
         
-        time.sleep(0.3)
+        time.sleep(1)
     
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     break
