@@ -16,6 +16,13 @@ def update_progress(frame_count: int, total_frames: int):
     sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames}] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}]")
     sys.stdout.flush()
 
+def save_frame_to_db(db_captures, frame, subtitle):
+    try:
+        db_captures.insert_pframe_tensor(frame, subtitle)
+    except Exception as err:
+        logger.error(f"Insert of pframe failed\n{err}")
+        raise
+
 def main(video_path: str, srt_path: str):
     # Open the video file
     cap = cv2.VideoCapture(video_path)
@@ -41,48 +48,25 @@ def main(video_path: str, srt_path: str):
         frame_count += 1
         update_progress(frame_count, total_frames)
         if not ret:
+            logger.error("no ret")
             break
-        
+
         current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0  # Convert to seconds
+        subtitle = ""
 
         # Check if the current frame is within the subtitle timestamps
         if subtitle_index < len(subtitles) and current_time >= subtitles[subtitle_index].start.total_seconds():
-            # Capture frames between the start and end times of the subtitle
-            while current_time <= subtitles[subtitle_index].end.total_seconds():
-                # Get the subtitle
-                subtitle = subtitles[subtitle_index]
+            subtitle = subtitles[subtitle_index].content
+            if current_time >= subtitles[subtitle_index].end.total_seconds():
+                subtitle_index += 1
 
-                # make this optional
-                # alexnet doesnt use grayscale
-                # # convert frame to keras tensor grayscale
-                # gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                # # Convert to NumPy array
-                # gray_frame = np.asarray(gray_frame)
-                # # Expand dimension for channel (Keras expects grayscale as single-channel)
-                # gray_frame = np.expand_dims(gray_frame, axis=-1)
-                # # Convert to float32 (common data type for Keras tensors)
-                # gray_frame = gray_frame.astype('float32')
+        save_frame_to_db(
+            db_captures,
+            frame,
+            subtitle
+        )
 
-                # save frame in DB
-                try:
-                    db_captures.insert_pframe_tensor(frame, subtitle.content)
-                    cap_frame_count += 1
-                except Exception as err:
-                    logger.error(f"Insert of pframe failed\n{err}")
-                    raise
-
-                ret, frame = cap.read()
-                frame_count += 1
-                update_progress(frame_count, total_frames)
-                if not ret:
-                    break
-            
-            subtitle_index += 1
-        
-        
-
-        
-
+        cap_frame_count += 1
 
     # Release the video capture
     cap.release()

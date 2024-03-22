@@ -16,7 +16,7 @@ So would like
  Environment -> ( VAE ) -> (EBM-LTSM) -> Action -> Environment
 
  # current model 03202024
- Environment -> AlexNet -> Energy via NCE loss -> ?
+ Environment -> AlexNet -> Energy via NCE loss -> LLM -> Action/Description Text -> Environment 
 ```
 
 Lets see if a regular dude like me can pull it off.
