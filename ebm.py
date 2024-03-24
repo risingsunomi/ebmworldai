@@ -20,39 +20,25 @@ class EBM(nn.Module):
         # The normalizing constant logZ(θ)        
         self.c = nn.Parameter(torch.tensor([1.], requires_grad=True))
         self.f = nn.Sequential(
-            nn.Linear(dim, 128),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 128),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 1),
+            nn.Linear(dim, 256),
+            # nn.Linear(dim, 128),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(256, 128),
+            # nn.Linear(128, 128),
+            nn.ReLU(),
+            # nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(128, 32),
+            nn.ReLU(),
+            nn.Linear(32, 8),
+            nn.ReLU(),
+            nn.Linear(8, 4),
+            nn.ReLU(),
+            nn.Linear(4, 2),
+            nn.ReLU(),
+            nn.Linear(2, 1)
+            # nn.Linear(128, 1),
         )
-
-        # # for features from AlexNet
-        # self.f_feature = nn.Sequential(
-        #     nn.Linear(6, 1536),
-        #     nn.ReLU(),
-        #     nn.Linear(1536, 384),
-        #     nn.ReLU(),
-        #     nn.Linear(384, 96),
-        #     nn.ReLU(),
-        #     nn.Linear(96, 1)
-        # )
-
-        # # for just image frames from OpenCV
-        # self.f_frame = nn.Sequential(
-        #     nn.Linear(224, 112),
-        #     nn.ReLU(),
-        #     nn.Linear(112, 56),
-        #     nn.ReLU(),
-        #     nn.Linear(56, 28),
-        #     nn.ReLU(),
-        #     nn.Linear(28, 14),
-        #     nn.ReLU(),
-        #     nn.Linear(14, 7),
-        #     nn.ReLU(),
-        #     nn.Linear(7, 1)
-        # )
-
     # def forward(self, x, features=False):
     def forward(self, x):
         # if features:

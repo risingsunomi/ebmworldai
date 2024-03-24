@@ -122,7 +122,7 @@ def main():
 
     # Load frames
     caps = Captures()
-    cap_frames = caps.get_all_pframes(limit=1000)
+    cap_frames = caps.get_all_pframes(limit=2000)
     frame_cnt = 0
     for cap_frame in cap_frames:
         logger.info(f"Processing Frame: {frame_cnt}")
@@ -193,13 +193,15 @@ def main():
 
         # get energy from features
         ebm = EBM(dim=an_features.shape[2])
-        feature_energy, _, feature_tensor_energy = ebm.nce_loss(
+        feature_energy, feature_energy_acc, feature_tensor_energy = ebm.nce_loss(
             feature_noise,
             an_features,
             feature_gen_noise
         )
 
+        logging.info(f"feature_energy_acc: {feature_energy_acc}")
         logging.info(f"features_energy: {feature_energy}\n")
+
         feature_energy_list.append((frame_cnt, float(feature_energy)))
         afe_img = draw_function_image(
             feature_energy_list,
@@ -207,6 +209,7 @@ def main():
             x_title="Frame",
             y_title="Energy" 
         )
+        
         logging.info(f"feature_tensor_energy.shape {feature_tensor_energy.shape}")
 
         # resize features energy tensor
@@ -232,7 +235,7 @@ def main():
 
         fte_img = visualize_tensor_3d(
             feature_tensor_energy,
-            'Energy Tensor of AlexNet Contours via EBM'
+            'Energy Tensor of AlexNet Features via EBM'
         )
         
 
