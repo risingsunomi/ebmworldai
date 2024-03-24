@@ -3,6 +3,7 @@ import srt
 import argparse
 import sys
 from captures import Captures
+import time
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,7 +14,7 @@ def update_progress(frame_count: int, total_frames: int):
     progress = (frame_count / total_frames) * 100
     
     # Update the progress bar in the terminal
-    sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames}] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))} frames]")
+    sys.stdout.write(f"\rProgress: [{int(progress)}%] [{frame_count} / {total_frames} frames] [{'=' * int(progress // 2)}{' ' * (50 - int(progress // 2))}]")
     sys.stdout.flush()
 
 def save_frame_to_db(db_captures, frame, subtitle):
@@ -50,6 +51,9 @@ def main(video_path: str, srt_path: str=None):
     # Iterate through the video frames
     while cap.isOpened():
         ret, frame = cap.read()
+        cv2.imshow("Captured Frame", frame)
+
+        cv2.waitKey(1)
         frame_count += 1
         update_progress(frame_count, total_frames)
         if not ret:
@@ -73,7 +77,7 @@ def main(video_path: str, srt_path: str=None):
 
         cap_frame_count += 1
 
-        cv2.imshow("Captured Frame", frame)
+        
 
     # Release the video capture
     cap.release()

@@ -76,7 +76,9 @@ class EBM(nn.Module):
             (r_x > 1/2).sum() + (r_gen > 1/2).sum()
         ).cpu().numpy() / (len(features) + len(gen_noise))
 
-        return -v,  acc
+        v_tensor = torch.stack([logp_x, logq_x, logp_gen, logq_gen], dim=0)
+
+        return -v,  acc, v_tensor
     
     def optimizer(self, lr=0.001):
         return torch.optim.Adam(
