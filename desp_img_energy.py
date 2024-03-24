@@ -32,47 +32,34 @@ def preprocess_image(image):
     return transform(image)
 
 
-def visualize_img_energy_map_3d(
-    image,
-    temperature=1.0
-):
-    cframe = image
-    cframe = torch.from_numpy(cframe).float()
-
-    # Initialize the energy map
-    energy_map = np.zeros((image.shape[0], image.shape[1]))
-    height, width = energy_map.shape
-    X, Y = np.meshgrid(np.arange(width), np.arange(height))
-
-    # Calculate the NCE loss
-    nce_loss = tnf.binary_cross_entropy_with_logits(
-        cframe, torch.ones_like(cframe), reduction='none'
-    )
-
-    # Reshape the nce_loss tensor to match the shape of the input image
-    nce_loss = nce_loss.view(image.shape[2], image.shape[0], image.shape[1])
-    nce_loss = nce_loss.permute(1, 2, 0).contiguous()
-    nce_loss = nce_loss.view(image.shape[0], image.shape[1], -1)
-
-    # Calculate the energy map
-    energy_map = -temperature * nce_loss.numpy().squeeze()
+def visualize_img_map_3d(image):
+    """
+    3D graph display of image frames
+    """
+    
+    height, width, depth = image.shape
 
     # Create a figure and 3D axes
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Select only one channel from the energy map
-    if energy_map.ndim == 3:
-        energy_map = energy_map[:, :, 0]
+    # Create a meshgrid for the X, Y, and Z coordinates
+    X, Y = np.meshgrid(np.arange(width), np.arange(height))
+    Z = np.zeros_like(X)
 
-    # Plot the energy map as a 3D surface
-    ax.plot_surface(X, Y, energy_map, cmap='jet')
+    # Plot the 3D surface for each depth level
+    for i in range(depth):
+        Z = image[:, :, i]
+        ax.plot_surface(X, Y, Z, cmap='jet', alpha=0.8)
 
     # Set labels and title
     ax.set_xlabel('Width')
     ax.set_ylabel('Height')
-    ax.set_zlabel('Energy')
-    ax.set_title('Energy Graph')
+    ax.set_zlabel('Depth')
+    ax.set_title('Image Frame Tensor')
+
+    # Adjust the viewing angle
+    ax.view_init(elev=20, azim=45)
 
     # Convert the Matplotlib figure to an OpenCV image
     fig.canvas.draw()
@@ -111,7 +98,7 @@ def visualize_contour_energy_3d(
     ax.set_xlabel('Width')
     ax.set_ylabel('Height')
     ax.set_zlabel('Depth')
-    ax.set_title('Energy Tensor')
+    ax.set_title('Energy of AlexNet Contours via EBM')
 
     # Adjust the viewing angle
     ax.view_init(elev=20, azim=45)
@@ -171,7 +158,7 @@ def main():
             (cap_array.shape[1], cap_array.shape[0])
         )
 
-        ftd_img = visualize_img_energy_map_3d(cap_array, 0.1)
+        ftd_img = visualize_img_map_3d(cap_array)
         td_img = visualize_contour_energy_3d(feature_tensor_energy)
 
         # # Display the original image and the energy map
@@ -180,8 +167,8 @@ def main():
         
         
         cv2.imshow("Original Frame", cap_array)
-        cv2.imshow("3D Energy Map of Frame", ftd_img)
-        cv2.imshow("3D Energy Map of Contours", td_img)
+        cv2.imshow("ImageFrame", ftd_img)
+        cv2.imshow("Energy of Contours via EBM", td_img)
 
         frame_cnt += 1
     
