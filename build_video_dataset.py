@@ -50,14 +50,12 @@ def main(video_path: str, srt_path: str=None):
 
     # Iterate through the video frames
     while cap.isOpened():
-        ret, frame = cap.read()
-        cv2.imshow("Captured Frame", frame)
-
-        cv2.waitKey(1)
         frame_count += 1
-        update_progress(frame_count, total_frames)
+        ret, frame = cap.read()
         if not ret:
             break
+        update_progress(frame_count, total_frames)
+        cv2.imshow("Captured Frame", frame)
 
         current_time = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0  # Convert to seconds
         subtitle = ""
@@ -69,13 +67,18 @@ def main(video_path: str, srt_path: str=None):
                 if current_time >= subtitles[subtitle_index].end.total_seconds():
                     subtitle_index += 1
 
+        # resize frame to 224x224
+        resize_frame = cv2.resize(frame, (224,224))
         save_frame_to_db(
             db_captures,
-            frame,
+            resize_frame,
             subtitle
         )
 
         cap_frame_count += 1
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
         
 

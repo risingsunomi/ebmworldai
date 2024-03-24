@@ -15,44 +15,71 @@ import torch.nn as nn
 import torch.distributions as D
 
 class EBM(nn.Module):
-    def __init__(self):
+    def __init__(self, dim=3):
         super(EBM, self).__init__()
         # The normalizing constant logZ(θ)        
         self.c = nn.Parameter(torch.tensor([1.], requires_grad=True))
-
         self.f = nn.Sequential(
-            nn.Linear(6, 1536),
-            nn.ReLU(),
-            nn.Linear(1536, 384),
-            nn.ReLU(),
-            nn.Linear(384, 96),
-            nn.ReLU(),
-            nn.Linear(96, 1)
+            nn.Linear(dim, 128),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(128, 128),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(128, 1),
         )
 
+        # # for features from AlexNet
+        # self.f_feature = nn.Sequential(
+        #     nn.Linear(6, 1536),
+        #     nn.ReLU(),
+        #     nn.Linear(1536, 384),
+        #     nn.ReLU(),
+        #     nn.Linear(384, 96),
+        #     nn.ReLU(),
+        #     nn.Linear(96, 1)
+        # )
+
+        # # for just image frames from OpenCV
+        # self.f_frame = nn.Sequential(
+        #     nn.Linear(224, 112),
+        #     nn.ReLU(),
+        #     nn.Linear(112, 56),
+        #     nn.ReLU(),
+        #     nn.Linear(56, 28),
+        #     nn.ReLU(),
+        #     nn.Linear(28, 14),
+        #     nn.ReLU(),
+        #     nn.Linear(14, 7),
+        #     nn.ReLU(),
+        #     nn.Linear(7, 1)
+        # )
+
+    # def forward(self, x, features=False):
     def forward(self, x):
+        # if features:
+        #     log_p = - self.f_feature(x) - self.c
+        # else:
+        #     log_p = - self.f_frame(x) - self.c
         log_p = - self.f(x) - self.c
         return log_p
     
-    def nce_loss(self, noise, features, gen_noise):
+    def nce_loss(self, noise, in_tensor, gen_noise):
         """
-        Noise Contrastive Estimation (NCE) loss function.
-        To be used with AlexNet features
+        Noise Contrastive Estimation (NCE) loss function
         """
-        # print(f"\nfeatures.shape: {features.shape}")
-        logp_x = self.forward(features).squeeze().unsqueeze(0).unsqueeze(1)    # logp(x)
+        # print(f"\nin_tensor.shape: {in_tensor.shape}")
+        logp_x = self.forward(in_tensor)   # logp(x)
         # print(f"logp_x.shape: {logp_x.shape}")
-        logq_x = noise.log_prob(features).unsqueeze(1)  # logq(x)
+        logq_x = noise.log_prob(in_tensor).unsqueeze(-1)  # logq(x)
         # print(f"logq_x.shape: {logq_x.shape}")
-        logp_gen = self.forward(gen_noise).squeeze().unsqueeze(0).unsqueeze(1)  # logp(x̃)
+        logp_gen = self.forward(gen_noise) # logp(x̃)
         # print(f"logp_gen.shape: {logp_gen.shape}")
-        logq_gen = noise.log_prob(gen_noise).unsqueeze(1)  # logq(x̃)
+        logq_gen = noise.log_prob(gen_noise).unsqueeze(-1)  # logq(x̃)
         # print(f"logq_gen.shape: {logq_gen.shape}")
 
         value_data = logp_x - torch.logsumexp(
             torch.cat(
                 [logp_x, logq_x],
-                dim=0
+                dim=1
             ), 
             dim=1, 
             keepdim=True
@@ -74,7 +101,7 @@ class EBM(nn.Module):
 
         acc = (
             (r_x > 1/2).sum() + (r_gen > 1/2).sum()
-        ).cpu().numpy() / (len(features) + len(gen_noise))
+        ).cpu().numpy() / (len(in_tensor) + len(gen_noise))
 
         v_tensor = torch.stack([logp_x, logq_x, logp_gen, logq_gen], dim=0)
 
